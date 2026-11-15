@@ -1,5 +1,3 @@
-flask
-flask-cors
-openai
-numpy
-scikit-learn
+Flask>=3.0,<4
+openai>=1.60,<3
+gunicorn>=22,<24
