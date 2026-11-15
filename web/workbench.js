@@ -97,6 +97,7 @@
       const text = await response.text();
       let data;
       try { data = JSON.parse(text); } catch (_) { data = null; }
+      if (response.status === 422 && data && data.status === 'insufficient_sources') return data;
       if (!response.ok) {
         const error = (data && typeof data.error === 'string' && data.error) ||
           '伺服器回應狀態 ' + response.status;
@@ -412,7 +413,7 @@
       }
       state.hits[mode] = hits;
       removeLoading();
-      const message = {role:'assistant', text:body, meta, hits: mode === 'search' ? hits : [],
+      const message = {role:'assistant', text:body, meta, hits: hits,
         analyses: mode === 'compare' && response.status === 'completed' ? response.analyses : null};
       addMessage(message);
       refreshEvidence('已完成本次檢索。' + (response.warning ? ' 向量服務暫時不可用，請注意降級狀態。' : ''), hits);
