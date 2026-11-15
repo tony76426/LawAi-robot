@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/legal-rag-v2-20261116
+      - feature/rag-workbench-frontend-20261116
   pull_request:
 
 permissions:
@@ -27,5 +28,7 @@ jobs:
         env:
           LAWAI_ENABLE_COMPARISON: '0'
         run: python -m unittest discover -s tests -v
+      - name: Frontend JavaScript syntax
+        run: node --check web/workbench.js && node --check web/config.js
       - name: Retrieval baseline
         run: python scripts/evaluate.py
