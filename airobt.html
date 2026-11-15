@@ -834,28 +834,32 @@
     const micOverlay = document.getElementById('mic-overlay');
     const voiceBtn = document.getElementById('voice-btn');
 
-    function appendMessage(role, text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${role}-message`;
-
-        if (role === 'bot') {
-            messageDiv.innerHTML = `
-                <div class="message-role">
-                    <i class="fas fa-balance-scale" style="color: #D4AF37;"></i> LawAI法詢 客服
-                </div>
-                <div class="message-content">
-                    <div class="bot-answer">📌 ${text}</div>
-                </div>
-            `;
-        } else {
-            messageDiv.innerHTML = `
-                <div class="message-role"><i class="fas fa-user"></i> 您</div>
-                <div class="message-content">${text}</div>
-            `;
-        }
-
-        chatWindow.appendChild(messageDiv);
+    // Render all user/model content as TEXT, never interpolated HTML.
+    const chatHistory = [];
+    const clearHistoryButton = document.getElementById('clear-history-btn');
+    function appendMessage(role, text, persist = true) {
+        const safeRole = role === 'bot' ? 'bot' : 'user';
+        const message = document.createElement('div');
+        message.className = 'message ' + safeRole + '-message';
+        const title = document.createElement('div');
+        title.className = 'message-role';
+        title.textContent = safeRole === 'bot' ? '⚖️ LawAI 法詢客服' : '👤 您';
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        content.style.whiteSpace = 'pre-wrap';
+        content.style.overflowWrap = 'anywhere';
+        content.textContent = safeRole === 'bot' ? '📌 ' + String(text) : String(text);
+        message.append(title, content);
+        chatWindow.appendChild(message);
         chatWindow.scrollTop = chatWindow.scrollHeight;
+        if (persist) {
+            chatHistory.push({ role: safeRole, text: String(text).slice(0, 6000) });
+            try {
+                // Session only; legal questions must not persist indefinitely on the device.
+                sessionStorage.setItem('lawai_chat_history_v2',
+                    JSON.stringify(chatHistory.slice(-30)));
+            } catch (_) {}
+        }
     }
 
     function showTypingIndicator() {
@@ -893,7 +897,10 @@
             if (!response.ok) throw new Error("API 回應錯誤");
 
             const data = await response.json();
-            return data.answer;
+            const mode = data.mode === 'hybrid'
+                ? '已使用向量＋關鍵字混合檢索'
+                : '目前使用關鍵字檢索（尚未載入有效的向量索引）';
+            return String(data.answer || '目前沒有可用的答覆。') + '\n\n檢索模式：' + mode;
         } catch (error) {
             console.error("API 錯誤：", error);
             return "⚠️ 無法取得回應，請稍後再試。";
@@ -928,7 +935,31 @@
         recognition.onresult = function (event) {
             const result = event.results[0][0].transcript;
             userInput.value = result;
-            userInput.focus();
+            // Drop the legacy localStorage HTML transcript; it was unsafe and over-persistent.
+    try { localStorage.removeItem('chatHistory'); } catch (_) {}
+    try {
+        const oldMessages = JSON.parse(sessionStorage.getItem('lawai_chat_history_v2') || '[]');
+        if (Array.isArray(oldMessages)) {
+            oldMessages.slice(-30).forEach(item => {
+                if (item && (item.role === 'user' || item.role === 'bot') &&
+                    typeof item.text === 'string') {
+                    appendMessage(item.role, item.text, false);
+                    chatHistory.push({role:item.role, text:item.text});
+                }
+            });
+        }
+    } catch (_) {
+        try { sessionStorage.removeItem('lawai_chat_history_v2'); } catch (_) {}
+    }
+    if (clearHistoryButton) {
+        clearHistoryButton.addEventListener('click', () => {
+            chatHistory.length = 0;
+            chatWindow.replaceChildren();
+            try { sessionStorage.removeItem('lawai_chat_history_v2'); } catch (_) {}
+        });
+    }
+
+    userInput.focus();
         };
 
         recognition.onstart = function () {
@@ -956,55 +987,6 @@
     userInput.focus();
 });
   </script>
-  <script>
-   document.addEventListener('DOMContentLoaded', function () {
-    const chatWindow = document.getElementById('chat-window');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const clearBtn = document.getElementById('clear-history-btn');
 
-    function appendMessage(role, text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${role}-message`;
-        if (role === 'bot') {
-            messageDiv.innerHTML = `
-                <div class="message-role" >
-                    <i class="fas fa-balance-scale" style="color: #D4AF37;"></i> LawAI法詢 客服
-                </div>
-                <div class="message-content">
-                    <div class="bot-answer">📌 ${text}</div>
-                </div>
-            `;
-        } else {
-            messageDiv.innerHTML = `
-                <div class="message-role"><i class="fas fa-user"></i> 您</div>
-                <div class="message-content">${text}</div>
-            `;
-        }
-        chatWindow.appendChild(messageDiv);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-        saveHistory();
-    }
-
-    function saveHistory() {
-        localStorage.setItem("chatHistory", chatWindow.innerHTML);
-    }
-
-    function loadHistory() {
-        const saved = localStorage.getItem("chatHistory");
-        if (saved) {
-            chatWindow.innerHTML = saved;
-        }
-    }
-
-    function clearHistory() {
-        localStorage.removeItem("chatHistory");
-        chatWindow.innerHTML = '';
-    }
-
-    clearBtn.addEventListener("click", clearHistory);
-    loadHistory();
-});
-  </script>
  </body>
 </html>
