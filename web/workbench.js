@@ -2,6 +2,7 @@
   'use strict';
 
   const byId = (id) => document.getElementById(id);
+  const introElement = byId('intro');
   const modes = {
     chat: {
       label: '智能問答', eyebrow: 'LEGAL INTELLIGENCE / 01',
@@ -271,8 +272,7 @@
     panel.replaceChildren();
     const messages = state.messages[state.mode];
     if (!messages.length) {
-      const intro = byId('intro');
-      if (intro) panel.append(intro);
+      if (introElement) panel.append(introElement);
     } else {
       messages.forEach((message) => panel.append(renderTextMessage(message)));
     }
@@ -283,12 +283,12 @@
   }
 
   function renderIntro() {
-    const intro = byId('intro');
+    const intro = introElement;
     if (!intro) return;
     const mode = modes[state.mode];
-    byId('introTitle').textContent = mode.intro;
-    byId('introDescription').textContent = mode.description;
-    const list = byId('sampleList');
+    intro.querySelector('#introTitle').textContent = mode.intro;
+    intro.querySelector('#introDescription').textContent = mode.description;
+    const list = intro.querySelector('#sampleList');
     list.replaceChildren();
     mode.samples.forEach((text) => {
       const button = node('button', 'sample-btn');
