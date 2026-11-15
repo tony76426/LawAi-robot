@@ -1,0 +1,46 @@
+[
+  {
+    "question": "我要離婚",
+    "expected_id": "faq-014"
+  },
+  {
+    "question": "我想寫出一份合約",
+    "expected_id": "faq-008"
+  },
+  {
+    "question": "我要申請商標註冊",
+    "expected_id": "faq-006"
+  },
+  {
+    "question": "法院寄來開庭通知我該怎麼辦？",
+    "expected_id": "faq-022"
+  },
+  {
+    "question": "租客不繳租金也不搬",
+    "expected_id": "faq-016"
+  },
+  {
+    "question": "我父親過世怎麼繼承房產？",
+    "expected_id": "faq-015"
+  },
+  {
+    "question": "要怎麼開始使用 LawAi 諮詢服務？",
+    "expected_id": "faq-012"
+  },
+  {
+    "question": "我借人錢對方還不出來",
+    "expected_id": "faq-017"
+  },
+  {
+    "question": "火星火箭燃料推進器試飛技術",
+    "expected_id": null
+  },
+  {
+    "question": "量子晶片製程曝光機參數",
+    "expected_id": null
+  },
+  {
+    "question": "海洋珊瑚礁水下攝影鏡頭",
+    "expected_id": null
+  }
+]
