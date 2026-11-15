@@ -11,7 +11,7 @@ import os
 import re
 import time
 
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file, send_from_directory, redirect
 from retrieval import (EMBEDDING_MODEL, ROOT, authoritative_hits, load_index,
                        load_records, public_hit, rank_records)
 
@@ -90,6 +90,18 @@ def security_headers(response):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Cache-Control"] = "no-store"
     response.headers["X-Frame-Options"] = "DENY"
+    # CORS: reflect only explicit, exact origins; never use wildcard and no cookies.
+    # The same-origin frontend works without any CORS configuration.
+    if request.path.startswith("/api/"):
+        origin = request.headers.get("Origin", "")
+        allowed = {item.strip().rstrip("/") for item in
+                   os.getenv("LAWAI_ALLOWED_ORIGINS", "").split(",") if item.strip()}
+        if origin and origin != "null" and origin in allowed and "*" not in origin:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+            response.headers["Access-Control-Max-Age"] = "600"
+            response.vary.add("Origin")
     return response
 
 
@@ -100,7 +112,18 @@ def too_large(_):
 
 @app.get("/")
 def home():
-    return send_file(ROOT / "airobt.html")
+    # Keep the old airobt.html as a historical UI reference; serve new workbench.
+    return redirect("/web/", code=302)
+
+
+@app.get("/web/")
+def workbench():
+    return send_file(ROOT / "web" / "index.html")
+
+
+@app.get("/web/<path:filename>")
+def workbench_asset(filename: str):
+    return send_from_directory(ROOT / "web", filename)
 
 
 @app.get("/api/health")
