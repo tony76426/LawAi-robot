@@ -1,0 +1,13 @@
+# Never publish credentials, client data or generated embeddings.
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+data/
+uploads/
+*.sqlite3
+.coverage
